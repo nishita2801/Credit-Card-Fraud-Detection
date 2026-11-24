@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import joblib
@@ -57,7 +58,7 @@ REPORT_DIR = PROJECT_ROOT / "reports"
 
 RESULTS_PATH = MODEL_DIR / "evaluation_results.joblib"
 COMPARISON_PATH = REPORT_DIR / "model_comparison.csv"
-DATASET_PATH = PROJECT_ROOT / "data" / "raw" / "creditcard.csv"
+SUMMARY_PATH = REPORT_DIR / "dataset_summary.json"
 
 
 # ==========================================
@@ -66,11 +67,10 @@ DATASET_PATH = PROJECT_ROOT / "data" / "raw" / "creditcard.csv"
 
 @st.cache_resource
 def load_results():
-
     if not RESULTS_PATH.exists():
         raise FileNotFoundError(
             "Evaluation results not found. "
-            "Run python -m src.evaluate first."
+            "Make sure models/evaluation_results.joblib is available."
         )
 
     return joblib.load(RESULTS_PATH)
@@ -78,11 +78,10 @@ def load_results():
 
 @st.cache_data
 def load_comparison():
-
     if not COMPARISON_PATH.exists():
         raise FileNotFoundError(
             "Comparison report not found. "
-            "Run python -m src.evaluate first."
+            "Make sure reports/model_comparison.csv is available."
         )
 
     return pd.read_csv(COMPARISON_PATH, index_col=0)
@@ -90,15 +89,22 @@ def load_comparison():
 
 @st.cache_data
 def load_dataset_summary():
+    if not SUMMARY_PATH.exists():
+        raise FileNotFoundError(
+            "Dataset summary not found. "
+            "Make sure reports/dataset_summary.json is available."
+        )
 
-    if not DATASET_PATH.exists():
-        raise FileNotFoundError("Dataset not found.")
+    summary = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
 
-    df = pd.read_csv(DATASET_PATH)
+    class_counts = {
+        int(label): int(count)
+        for label, count in summary["class_counts"].items()
+    }
 
-    df = df.drop_duplicates()
+    total_transactions = int(summary["total_transactions"])
 
-    return len(df), df["Class"].value_counts().to_dict()
+    return total_transactions, class_counts
 
 
 # ==========================================
@@ -123,20 +129,16 @@ st.divider()
 # ==========================================
 
 try:
-
     results = load_results()
     comparison_df = load_comparison()
-
     total_transactions, class_counts = load_dataset_summary()
 
 except (FileNotFoundError, KeyError, ValueError) as error:
-
     st.error(str(error))
     st.info(
-        "Please complete model training and evaluation before "
-        "opening the dashboard."
+        "Please make sure the evaluation results, comparison report, "
+        "and dataset summary files are available."
     )
-
     st.stop()
 
 
@@ -156,7 +158,6 @@ selected_model = st.sidebar.selectbox(
 st.sidebar.divider()
 
 st.sidebar.markdown("### Project Information")
-
 st.sidebar.write("Dataset: Credit Card Fraud Detection")
 st.sidebar.write("Models: Logistic Regression, Random Forest")
 st.sidebar.write("Training: 80%")
@@ -174,6 +175,8 @@ total_legitimate = int(class_counts.get(0, 0))
 
 fraud_percentage = (
     total_fraud / total_transactions * 100
+    if total_transactions
+    else 0
 )
 
 col1, col2, col3, col4 = st.columns(4)
@@ -238,11 +241,9 @@ st.subheader("Individual Model Performance")
 columns = st.columns(len(model_names))
 
 for column, model_name in zip(columns, model_names):
-
     metrics = results[model_name]
 
     with column:
-
         st.markdown(f"### {model_name}")
 
         st.metric(
@@ -287,7 +288,6 @@ st.plotly_chart(
 )
 
 cm = results[selected_model]["Confusion Matrix"]
-
 tn, fp, fn, tp = cm.ravel()
 
 c1, c2, c3, c4 = st.columns(4)
