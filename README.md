@@ -1,4 +1,4 @@
-# Credit Card Fraud Detection Dashboard
+# Credit Card Fraud Detection
 
 An interactive Streamlit dashboard for comparing machine learning models that classify credit card transactions as legitimate or fraudulent.
 
