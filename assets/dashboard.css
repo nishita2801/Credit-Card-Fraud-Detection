@@ -172,3 +172,28 @@ hr {
     animation-duration: 0.01ms !important;
   }
 }
+/* Make the sidebar model selector readable */
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="select"] > div > div {
+  background-color: #101c2d !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"],
+[data-testid="stSidebar"] [data-baseweb="select"] * {
+  color: #e8eef8 !important;
+  -webkit-text-fill-color: #e8eef8 !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] svg {
+  fill: #92a2b9 !important;
+}
+
+/* Keep the opened model list readable too */
+[data-baseweb="popover"] [role="option"] {
+  background-color: #101c2d !important;
+  color: #e8eef8 !important;
+}
+
+[data-baseweb="popover"] [role="option"]:hover {
+  background-color: #1b2c44 !important;
+}
